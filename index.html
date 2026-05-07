@@ -669,62 +669,65 @@
 
   .tl-right { padding-top: 0; }
 
-  .tl-card {
+  .tl-groups-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .tl-group {
     background: var(--surface);
-    border-radius: 14px;
+    border-radius: 12px;
     border: 1px solid var(--border);
     overflow: hidden;
   }
 
-  .tl-list {
-    list-style: none;
-    margin: 0; padding: 0;
-  }
-
-  .tl-list-item {
+  .tl-group-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 11px 16px;
+    gap: 8px;
+    padding: 9px 14px;
+    border-bottom: 1px solid;
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .tl-group-icon { font-size: 14px; font-weight: 900; }
+  .tl-group-label { flex: 1; }
+
+  .tl-group-count {
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0.7;
+  }
+
+  .tl-group-body { padding: 4px 0; }
+
+  .tl-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 8px 14px;
     border-bottom: 1px solid var(--border);
     transition: background 0.15s;
   }
 
-  .tl-list-item:last-child { border-bottom: none; }
-  .tl-list-item:hover { background: var(--body-bg); }
+  .tl-row:last-child { border-bottom: none; }
+  .tl-row:hover { background: var(--body-bg); }
 
-  .tl-item-icon {
-    width: 24px; height: 24px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+  .tl-row-num {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    min-width: 16px;
+    font-family: 'DM Mono', monospace;
   }
 
-  .tl-item-icon.naik { background: #fef2f2; color: #dc2626; }
-  .tl-item-icon.turun { background: #f0fdf4; color: #16a34a; }
-  .tl-item-icon.mixed { background: #fff7ed; color: #d97706; }
-  .tl-item-icon.tetap { background: var(--body-bg); color: var(--text-secondary); }
-
-  .tl-item-text {
-    flex: 1;
+  .tl-row-text {
     font-size: 13px;
     color: var(--text-primary);
     line-height: 1.4;
   }
-
-  .tl-item-label {
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 20px;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .tl-item-label.naik { background: #fef2f2; color: #dc2626; }
-  .tl-item-label.turun { background: #f0fdf4; color: #16a34a; }
-  .tl-item-label.mixed { background: #fff7ed; color: #d97706; }
-  .tl-item-label.tetap { background: var(--body-bg); color: var(--text-secondary); }
 
   /* ===== ERROR STATE ===== */
   .error-state {
@@ -1314,45 +1317,56 @@ async function loadHarga() {
       return 'Tetap';
     }
 
+    const groupConfig = [
+      { key: 'naik',  label: 'Naik',        icon: '↑', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+      { key: 'turun', label: 'Turun',       icon: '↓', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
+      { key: 'mixed', label: 'Fluktuatif',  icon: '↕', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+      { key: 'tetap', label: 'Tetap',       icon: '→', color: '#6b7280', bg: '#f9fafb', border: '#e5e7eb' },
+    ];
+
     // Build timeline HTML
     const html = `<div class="timeline-v2">` +
-      [...dateOrder].reverse().map((date, di) => {
+      [...dateOrder].reverse().map(date => {
         const notes = groups[date];
-        const naikCount = notes.filter(n => classify(n) === 'naik').length;
-        const turunCount = notes.filter(n => classify(n) === 'turun').length;
-        const mixedCount = notes.filter(n => classify(n) === 'mixed').length;
-        const tetapCount = notes.filter(n => classify(n) === 'tetap').length;
+
+        // Group notes by classification
+        const grouped = { naik: [], turun: [], mixed: [], tetap: [] };
+        notes.forEach(n => { grouped[classify(n)].push(n); });
+
+        // Build group tables (only non-empty)
+        const tablesHtml = groupConfig
+          .filter(gc => grouped[gc.key].length > 0)
+          .map(gc => `
+            <div class="tl-group">
+              <div class="tl-group-header" style="background:${gc.bg};border-color:${gc.border};color:${gc.color}">
+                <span class="tl-group-icon">${gc.icon}</span>
+                <span class="tl-group-label">${gc.label}</span>
+                <span class="tl-group-count">${grouped[gc.key].length} komoditas</span>
+              </div>
+              <div class="tl-group-body">
+                ${grouped[gc.key].map((n, i) => `
+                  <div class="tl-row">
+                    <span class="tl-row-num">${i + 1}</span>
+                    <span class="tl-row-text">${n}</span>
+                  </div>`).join('')}
+              </div>
+            </div>`).join('');
 
         return `
         <div class="tl-item">
-          <!-- Left: date column -->
           <div class="tl-left">
             <div class="tl-dot"></div>
             <div class="tl-date-box">
               <div class="tl-date-text">${date}</div>
               <div class="tl-summary">
-                ${naikCount > 0 ? `<span class="tl-badge naik">↑ ${naikCount} naik</span>` : ''}
-                ${turunCount > 0 ? `<span class="tl-badge turun">↓ ${turunCount} turun</span>` : ''}
-                ${mixedCount > 0 ? `<span class="tl-badge mixed">↕ ${mixedCount} fluktuatif</span>` : ''}
-                ${tetapCount > 0 ? `<span class="tl-badge tetap">→ ${tetapCount} tetap</span>` : ''}
+                ${groupConfig.map(gc => grouped[gc.key].length > 0
+                  ? `<span class="tl-badge" style="background:${gc.bg};color:${gc.color};border-color:${gc.border}">${gc.icon} ${grouped[gc.key].length} ${gc.label.toLowerCase()}</span>`
+                  : '').join('')}
               </div>
             </div>
           </div>
-          <!-- Right: notes list -->
           <div class="tl-right">
-            <div class="tl-card">
-              <ul class="tl-list">
-                ${notes.map(n => {
-                  const type = classify(n);
-                  return `
-                  <li class="tl-list-item ${type}">
-                    <span class="tl-item-icon ${type}">${classIcon(type)}</span>
-                    <span class="tl-item-text">${n}</span>
-                    <span class="tl-item-label ${type}">${classLabel(type)}</span>
-                  </li>`;
-                }).join('')}
-              </ul>
-            </div>
+            <div class="tl-groups-wrap">${tablesHtml}</div>
           </div>
         </div>`;
       }).join('') +

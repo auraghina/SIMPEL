@@ -950,8 +950,9 @@ async function loadDistribusi() {
     const iPCL = header.findIndex(h => h.toUpperCase() === 'PCL');
     const iPML = header.findIndex(h => h.toUpperCase() === 'PML');
 
-    // Find minggu columns - ONLY from JANUARY onwards (skip last year's data)
-    const VALID_MONTHS = ['JAN','FEB','MAR','APR','MAY','MEI','JUN','JUL','AGU','SEP'];
+    // Find minggu columns - ONLY from JANUARY onwards, Indonesian/abbreviated only
+    // Excludes OKTOBER, NOVEMBER, DESEMBER (last year) and English full names
+    const VALID_MONTHS = ['JAN','FEB','MAR','APR','MAY','MEI'];
     const mingguCols = [];
     header.forEach((h, i) => {
       if (i <= iPML) return;
@@ -1102,9 +1103,9 @@ function renderChartTren(mingguCols) {
   // Fixed 12 bulan sebagai sumbu X
   const allBulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
   const bulanKeywords = [
-    ['JAN','JANUARY'],['FEB','FEBRUARY'],['MAR','MARCH'],['APR','APRIL'],
-    ['MAY','MEI'],['JUN','JUNE'],['JUL','JULY'],['AGU','AUGUST'],
-    ['SEP','SEPTEMBER'],['OKT','OCTOBER'],['NOV','NOVEMBER'],['DES','DECEMBER']
+    ['JAN'],['FEB'],['MAR'],['APR'],
+    ['MAY','MEI'],['JUN'],['JUL'],['AGU'],
+    ['SEP'],['OKT'],['NOV'],['DES']
   ];
   // null = belum ada data, 0+ = ada data
   const counts = new Array(12).fill(null);
